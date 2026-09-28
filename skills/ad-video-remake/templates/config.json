@@ -1,0 +1,48 @@
+{
+ "name": "skillmaxing-launch-16x9",
+ "total": 33.0,
+ "fps": 30,
+ "width": 1920,
+ "height": 1080,
+ "cues": [
+  [0.02, "whoosh"], [0.5, "tick"], [1.0, "whoosh_big"], [2.0, "whoosh"], [2.42, "tick"], [2.92, "pop"], [3.05, "tick"],
+  [3.55, "swoosh"], [4.72, "click"], [4.85, "whoosh"], [6.0, "whoosh"], [6.15, "swoosh"], [7.45, "tick"], [7.78, "tick"],
+  [8.1, "tick"], [8.72, "whoosh"], [9.7, "whoosh_big"], [10.1, "swoosh"], [10.75, "riser"], [13.0, "ding"],
+  [13.2, "confetti"], [14.4, "whoosh_big"], [15.85, "swoosh"], [17.32, "click"], [17.42, "pop"], [17.95, "whoosh"],
+  [18.3, "whoosh"], [20.0, "whoosh"], [20.3, "swoosh"], [21.45, "click"], [21.85, "whoosh"], [22.4, "whoosh"],
+  [23.45, "click"], [23.5, "pop"], [24.2, "shimmer"], [25.1, "whoosh_big"], [25.62, "whoosh"], [25.95, "tick"],
+  [26.5, "tick"], [27.25, "tick"], [28.35, "impact"], [29.05, "whoosh"]
+ ],
+ "sfx": {
+  "whoosh": ["quick soft airy whoosh, clean modern motion graphics transition", 0.6, 0.55],
+  "whoosh_big": ["fast bright whoosh swipe, clean motion graphics transition, no bass boom", 0.9, 0.6],
+  "swoosh": ["smooth soft low swoosh, gentle camera move, subtle", 1.0, 0.5],
+  "tick": ["tiny soft digital tick, text appearing on screen, clean user interface", 0.5, 0.45],
+  "pop": ["soft bubbly pop, user interface element appearing, playful and clean", 0.5, 0.6],
+  "click": ["crisp mouse click, trackpad tap, clean and close", 0.5, 0.75],
+  "ding": ["bright positive success chime, task complete notification, sparkly and clean", 1.5, 0.55],
+  "confetti": ["confetti party popper burst with light paper rustle, celebratory", 1.5, 0.55],
+  "riser": ["short clean tonal riser, rising sweep building up, modern tech ad", 1.8, 0.35],
+  "shimmer": ["magical sparkle shimmer, twinkling glitter, soft and bright", 1.5, 0.5],
+  "impact": ["clean deep logo reveal hit with a soft shimmering tail, modern tech brand", 2.5, 0.7]
+ },
+ "music": {
+  "bpm": 117,
+  "drop": 3.2,
+  "positive": ["upbeat modern pop", "bright commercial ad music", "117 bpm", "major key", "clean polished mix", "female pop vocal", "catchy", "tech product launch"],
+  "negative": ["dark", "aggressive", "lo-fi", "long intro", "spoken word"],
+  "sections": [
+   ["intro", 0.0, 3.2, "sparse and filtered: plucked synth and soft pad only, a light vocal count-in, building into the drop"],
+   ["drop", 3.2, 13.0, "full groove lands on the downbeat: punchy kick, claps, bright plucks, catchy upbeat vocal hook"],
+   ["hook", 13.0, 24.3, "keeps the energy: bouncy bass, handclaps, the vocal hook again, a little brighter"],
+   ["breakdown", 24.3, 28.3, "drums drop out, airy pad and sparkling plucks, a short build with a snare roll into the final hit"],
+   ["ending", 28.3, 33.0, "one big clean final chord hit on the downbeat, then it rings out and fades, no new material"]
+  ],
+  "lyrics": {
+   "intro": ["One, two, three, four"],
+   "drop": ["Press play and watch it click", "Every lesson, every trick"],
+   "hook": ["Level up, level up", "Learn it, build it, never stop"]
+  },
+  "prompt": "Upbeat bright modern pop song for a 33-second tech product launch ad, 117 bpm, major key, female vocal hook. 0-3.2s sparse filtered intro with a vocal count-in; the full groove drops at 3.2s; keeps driving to 24s; 24-28s drums drop out with sparkly plucks and a short build; one big final hit at 28.3s that rings out to the end."
+ }
+}
