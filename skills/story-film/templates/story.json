@@ -1,0 +1,154 @@
+{
+  "title": "skillmaxing-story",
+  "size": [1920, 1080],
+  "fps": 60,
+  "end": "n12.end+3.8",
+
+  "brand": {
+    "wordmark": "skillmaxing",
+    "mark_svg": "<svg viewBox=\"0 0 32 32\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><rect class=\"grow\" x=\"3.5\" y=\"19.5\" width=\"6\" height=\"8\" rx=\"1\"/><rect class=\"grow\" x=\"13\" y=\"13.5\" width=\"6\" height=\"14\" rx=\"1\"/><rect class=\"grow\" x=\"22.5\" y=\"7.5\" width=\"6\" height=\"20\" rx=\"1\"/><path class=\"draw\" d=\"M5 13l7.5-5 6 3.5L27 3.5\"/><path class=\"draw\" d=\"M22 3.5h5v5\"/></svg>",
+    "colors": { "ground": "#E9E9E9", "ink": "#3B3854", "accent": "#3FE9A0", "accent2": "#D7F23C", "mat": "#1c1a2b", "matline": "150,160,255" }
+  },
+
+  "voice": { "voice_id": "cjVigY5qzO86Huf0OWal", "model_id": "eleven_multilingual_v2", "speed": 0.95, "stability": 0.5, "style": 0.25 },
+
+  "lines": [
+    { "key": "n1", "gap": 0.5, "text": "People think the best engineers were just born smarter." },
+    { "key": "n2", "gap": 0.5, "text": "But look at how they actually learned." },
+    { "key": "n3", "gap": 0.45, "text": "They went deep. They read the papers everyone else skipped." },
+    { "key": "n4", "gap": 0.45, "text": "They rebuilt systems from scratch, until they knew why things break." },
+    { "key": "n5", "gap": 0.45, "text": "They argued at whiteboards, and shared what they found." },
+    { "key": "n6", "gap": 0.5, "text": "It took them years." },
+    { "key": "n7", "gap": 1.35, "text": "Meet Arjun." },
+    { "key": "n8", "gap": 0.5, "text": "He's a good engineer. But he wants to be a great one." },
+    { "key": "n9", "gap": 0.45, "text": "He saves every roadmap. Watches tutorials at two x. Follows every AI launch." },
+    { "key": "n10", "gap": 0.5, "text": "But when the interviewer says: design a rate limiter..." },
+    { "key": "n11", "gap": 0.25, "text": "he freezes." },
+    { "key": "n12", "gap": 0.9, "text": "Skillmaxing changes that." }
+  ],
+
+  "music": {
+    "prompt": "Cinematic documentary underscore for a tech brand film. Sparse felt piano motif over a soft warm synth pad and a gentle ticking pulse, 84 bpm, reflective and curious at first, slowly building tension with low strings and a heartbeat kick in the second half, instrumental, no vocals, no drums until the last third, ends on a sustained tense chord.",
+    "length_ms": 46000,
+    "level": 0.55,
+    "until": "n11"
+  },
+
+  "media": {
+    "photos": {
+      "torvalds": "File:LinuxCon Europe Linus Torvalds 03 (cropped).jpg",
+      "page_brin": "File:Google page brin.jpg",
+      "turing": "File:Alan Turing (1951) (crop).jpg",
+      "thompson_ritchie": "File:Ken Thompson and Dennis Ritchie--1973.jpg",
+      "hopper": "File:Grace Hopper and UNIVAC.jpg",
+      "hamilton": "File:Margaret Hamilton - restoration.jpg",
+      "google_rack": "File:Google's First Server Rack.jpg",
+      "first_web_server": "File:First Web Server.jpg",
+      "wozniak": "File:Steve Wozniak, 1983.jpg",
+      "dean": "File:Jeff Dean at Purdue Engineering (May 2024) - img 02.jpg",
+      "karpathy": "File:Andrej karpathy 2016.webp",
+      "guido": "File:Guido van Rossum OSCON 2006 cropped.png",
+      "feifei": "File:Fei-Fei Li at AI for Good 2017.jpg",
+      "shannon": "File:C.E. Shannon. Tekniska museet 43069.jpg"
+    },
+    "papers": {
+      "attention": "https://arxiv.org/pdf/1706.03762",
+      "mapreduce": "https://static.googleusercontent.com/media/research.google.com/en//archive/mapreduce-osdi04.pdf",
+      "shannon": "https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf",
+      "bitcoin": "https://bitcoin.org/bitcoin.pdf",
+      "raft": "https://raft.github.io/raft.pdf",
+      "dynamo": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf"
+    },
+    "clips": {
+      "eye": [9783957, 5.0, 2.4],
+      "silhouette": [20563164, 3.0, 2.4],
+      "laptop": [7942762, 2.0, 2.0],
+      "bed": [8070886, 8.0, 2.0],
+      "phoneface": [8070890, 1.0, 2.0],
+      "phonehand": [8070897, 5.0, 2.0],
+      "freeze": [7698908, 11.0, 3.0]
+    }
+  },
+
+  "scenes": [
+    {
+      "type": "mat", "from": 0, "to": "n6.end+1.0",
+      "shots": [
+        { "photo": "torvalds", "from": 0, "to": "n1+1.2", "cx": 840, "cy": 560, "h": 700, "rot": -1.2 },
+        { "photo": "page_brin", "from": "n1+1.2", "to": "n1+2.3", "cx": 900, "cy": 540, "h": 560, "rot": 1 },
+        { "photo": "turing", "from": "n1+2.3", "to": "n2-0.05", "cx": 960, "cy": 500, "h": 640, "rot": -0.8, "bw": true },
+        { "photo": "thompson_ritchie", "from": "n2-0.05", "to": "n2+1.15", "cx": 900, "cy": 520, "h": 480, "rot": 1.2, "bw": true },
+        { "photo": "hopper", "from": "n2+1.15", "to": "n3-0.05", "cx": 1000, "cy": 520, "h": 600, "rot": -1.5, "bw": true },
+        { "photo": "hamilton", "from": "n3-0.05", "to": "n3+1.35", "cx": 760, "cy": 540, "h": 900, "rot": 0.6 },
+        { "papers": ["attention", "mapreduce", "shannon", "bitcoin", "raft", "dynamo"], "from": "n3+1.35", "to": "n4-0.05" },
+        { "photo": "google_rack", "from": "n4-0.05", "to": "n4+1.35", "cx": 820, "cy": 540, "h": 860, "rot": -1 },
+        { "photo": "first_web_server", "from": "n4+1.35", "to": "n4+2.6", "cx": 980, "cy": 520, "h": 640, "rot": 1.2 },
+        { "photo": "wozniak", "from": "n4+2.6", "to": "n5-0.05", "cx": 760, "cy": 520, "h": 620, "rot": -1.3 },
+        { "photo": "dean", "from": "n5-0.05", "to": "n5+1.25", "cx": 900, "cy": 540, "h": 640, "rot": 1 },
+        { "photo": "karpathy", "from": "n5+1.25", "to": "n5+2.05", "cx": 1000, "cy": 520, "h": 480, "rot": -1.1 },
+        { "photo": "guido", "from": "n5+2.05", "to": "n6-0.1", "cx": 700, "cy": 520, "h": 620, "rot": -1.6 },
+        { "photo": "feifei", "from": "n5+2.25", "to": "n6-0.1", "cx": 1240, "cy": 560, "h": 600, "rot": 1.8 }
+      ],
+      "captions": [
+        { "text": "People think", "of": 0, "pos": "above", "at": "n1+0.05", "to": "n1+1.2" },
+        { "text": "the best engineers", "of": 1, "pos": "br", "at": "n1+1.25", "to": "n1+2.3" },
+        { "text": "were just [born smarter.]", "of": 2, "pos": "below", "at": "n1+2.35", "to": "n2-0.1" },
+        { "text": "But look at", "of": 3, "pos": "above", "dx": -20, "at": "n2", "to": "n2+1.2" },
+        { "text": "how they [actually learned.]", "of": 4, "pos": "below", "at": "n2+1.2", "to": "n3-0.1" },
+        { "text": "They went [deep.]", "of": 5, "pos": "right", "y": 470, "size": "big", "at": "n3+0.05", "to": "n3+1.4" },
+        { "text": "the papers [everyone else skipped.]", "x": 960, "y": 930, "align": "center", "at": "n3+1.75", "to": "n4-0.05" },
+        { "text": "They rebuilt systems", "of": 7, "pos": "right", "y": 420, "at": "n4+0.05", "to": "n4+1.35" },
+        { "text": "[from scratch.]", "of": 8, "pos": "below", "size": "big", "at": "n4+1.4", "to": "n4+2.6" },
+        { "text": "until they knew\n[why things break.]", "of": 9, "pos": "right", "y": 440, "at": "n4+2.65", "to": "n5-0.1" },
+        { "text": "They argued at whiteboards,", "of": 10, "pos": "above", "dx": -10, "at": "n5+0.05", "to": "n5+1.25" },
+        { "text": "and [shared] what they found.", "x": 960, "y": 930, "align": "center", "at": "n5+1.3", "to": "n6-0.15" }
+      ],
+      "wall": { "from": "n6-0.1", "caption": "It took them [years.]", "caption_at": "n6+0.05" }
+    },
+
+    { "type": "clip", "clip": "eye", "from": "n6.end+1.0", "to": "n8-0.05", "zoom": [1.12, 1.0],
+      "captions": [
+        { "text": "meet", "x": 960, "y": 470, "align": "center", "at": "n7", "to": "n8-0.1" },
+        { "text": "[Arjun]", "x": 960, "y": 530, "align": "center", "size": "big", "at": "n7+0.4", "to": "n8-0.1" }
+      ] },
+    { "type": "clip", "clip": "silhouette", "from": "n8-0.05", "to": "n8+1.5",
+      "captions": [ { "text": "He's a good engineer.", "x": 960, "y": 900, "align": "center", "at": "n8+0.05", "to": "n8+1.45" } ] },
+    { "type": "clip", "clip": "laptop", "from": "n8+1.5", "to": "n9-0.05", "zoom": [1.0, 1.05],
+      "captions": [
+        { "text": "BUT", "x": 960, "y": 330, "align": "center", "size": "big", "at": "n8+1.55", "to": "n9-0.1" },
+        { "text": "he wants to be", "x": 960, "y": 450, "align": "center", "at": "n8+1.85", "to": "n9-0.1" },
+        { "text": "a [great] one.", "x": 960, "y": 520, "align": "center", "size": "big", "at": "n8+2.35", "to": "n9-0.1" }
+      ] },
+    { "type": "clip", "clip": "bed", "from": "n9-0.05", "to": "n9+0.9", "zoom": [1.05, 1.12],
+      "captions": [ { "text": "saves [every roadmap]", "x": 960, "y": 960, "align": "center", "at": "n9+0.1", "to": "n9+0.9" } ] },
+    { "type": "phone", "from": "n9+0.9", "to": "n9+4.1",
+      "save_at": "n9+1.15", "speed_at": "n9+1.75", "launch_at": "n9+3.4",
+      "flicks": [["n9+1.45", 395], ["n9+2.95", 430], ["n9+4.0", 300]],
+      "toast": ["New launch · just now", "\"It changes everything.\" Tap to read the thread"],
+      "posts": [
+        { "name": "Dev Roadmaps", "handle": "@roadmap_daily", "color": "#F7C948", "save": true, "media": "tags", "tags": ["DSA", "OS", "DBMS", "CN", "LLD", "HLD", "React", "ML", "DevOps", "Rust", "K8s", "LLMs"], "text": "The ONLY roadmap you need to crack FAANG in 2026 🧵\nBookmark this before it's gone.", "views": "2.1M", "likes": "48K" },
+        { "name": "CS in 10 min", "handle": "@tenminutecs", "color": "#FF6B6B", "media": "video", "title": "SYSTEM DESIGN\nin 10 min", "text": "System design in 10 minutes. Everything you need for your interview.", "views": "940K", "likes": "12K" },
+        { "name": "AI Pulse", "handle": "@aipulse", "color": "#7C8CF8", "media": "launch", "title": "v9 is here ✦", "text": "🚨 BREAKING: another frontier model just dropped. This changes EVERYTHING.", "views": "3.4M", "likes": "91K" },
+        { "name": "Grind Mode", "handle": "@leetgrind", "color": "#3FE9A0", "text": "Day 214 of 500 LeetCode problems.\nStill don't feel ready.", "views": "88K", "likes": "2.3K" },
+        { "name": "hot takes", "handle": "@hot_takes", "color": "#4DD0E1", "text": "10 AI tools you're using wrong 🧵", "views": "1.1M", "likes": "20K" }
+      ],
+      "captions": [
+        { "text": "saves [every roadmap]", "x": 960, "y": 960, "align": "center", "at": "n9+0.9", "to": "n9+1.55", "cps": 999, "tick": 0 },
+        { "text": "tutorials at [2x]", "x": 960, "y": 960, "align": "center", "at": "n9+1.65", "to": "n9+3.35" },
+        { "text": "follows [every AI launch]", "x": 960, "y": 960, "align": "center", "at": "n9+3.45", "to": "n9+4.1" }
+      ] },
+    { "type": "clip", "clip": "phoneface", "from": "n9+4.1", "to": "n9+5.1", "zoom": [1.0, 1.08],
+      "captions": [ { "text": "follows [every AI launch]", "x": 960, "y": 960, "align": "center", "at": "n9+4.1", "to": "n10-0.3", "cps": 999, "tick": 0 } ] },
+    { "type": "clip", "clip": "phonehand", "from": "n9+5.1", "to": "n10-0.25", "zoom": [1.1, 1.0],
+      "captions": [ { "text": "follows [every AI launch]", "x": 960, "y": 960, "align": "center", "at": "n9+5.1", "to": "n10-0.3", "cps": 999, "tick": 0 } ] },
+    { "type": "call", "from": "n10-0.25", "to": "n12-0.65",
+      "title": "System Design Interview · Round 2",
+      "interviewer": { "initials": "PK", "name": "Priya K. · Staff Engineer" },
+      "you": { "name": "Arjun (you)", "clip": "freeze" },
+      "question": "Let's start. Design a rate limiter.", "board": "Design a rate limiter.", "highlight": "rate limiter",
+      "ask_at": "n10+1.2", "freeze_at": "n11", "heartbeats": ["n10", "n10+1.1", "n10+2.1"],
+      "freeze_caption": "he [freezes.]" },
+    { "type": "logo", "from": "n12-0.25", "hit": "n12.end+0.55", "to": "END", "size": 230,
+      "tagline": "Courses, papers and labs for engineers who want to go deep." }
+  ]
+}

@@ -6,13 +6,20 @@ frame in headless Chromium, and scored with ElevenLabs music and sound effects (
 
 ![The Skillmaxing launch ad, one frame every 2.2 s](examples/skillmaxing-launch/contact.png)
 
+## The skills
+
+| skill | what it makes |
+| --- | --- |
+| [`ad-video-remake`](skills/ad-video-remake/SKILL.md) | a reference ad (a YouTube link) remade for another brand: same beats, motion and sound structure |
+| [`story-film`](skills/story-film/SKILL.md) | the narrated story opening of a brand film (about 40 s): the greats on a cutting mat with typed captions, a character in dark stock footage who freezes when it counts, then the brand line on the logo ([example](examples/skillmaxing-story/storyboard.md)) |
+
 ## Install
 
 Copy the skill into your skills folder, for yourself or for one project:
 
 ```
-cp -r skills/ad-video-remake ~/.claude/skills/                # every project
-cp -r skills/ad-video-remake <project>/.claude/skills/        # one project
+cp -r skills/ad-video-remake skills/story-film ~/.claude/skills/            # every project
+cp -r skills/ad-video-remake skills/story-film <project>/.claude/skills/    # one project
 ```
 
 Then give Claude Code a reference and a brand: *"here's the video: <url>. I want the same animation and sound for
@@ -52,3 +59,15 @@ The first command writes `out/work/at.png`, a sheet of those four moments. The s
 `out/skillmaxing-launch-16x9.mp4`, in about 30 seconds.
 
 Fonts: Overused Grotesk, SIL Open Font License 1.1 (`templates/fonts/LICENSE.txt`).
+
+## Run the story-film example
+
+```
+mkdir work && cp skills/story-film/templates/story.json work/
+python skills/story-film/scripts/fetch_media.py --work work          # photos, papers, stock clips
+python skills/story-film/scripts/build.py --work work --at 5,13,21.5,36.4
+python skills/story-film/scripts/build.py --work work --verify       # work/out/skillmaxing-story.mp4, about 2.5 min
+```
+
+It needs `ELEVENLABS_API_KEY` for the narration, and additionally `pip install scipy pymupdf`. Photos come from
+Wikimedia Commons (licences in `work/media/CREDITS.md`) and the footage from Pexels.

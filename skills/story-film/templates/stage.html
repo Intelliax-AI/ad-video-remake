@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>story film: stage</title>
+<!--
+  The story film, drawn from story.json and timeline.json (written by scripts/build.py).
+
+  Contract with build.py:
+    window.ready    resolves once fonts, photos and papers are loaded
+    window.seek(t)  draws the exact frame at t seconds, from t alone, and waits for any frame images it swapped
+    window.SFX      [[seconds, kind, gain], ...]: the sound effects the scenes ask for
+    window.END      the film's length in seconds
+
+  Nothing animates on its own: every style is set from t, so frames can be filmed out of order by
+  several pages at once. Scenes are types (mat, clip, phone, call, logo) configured in story.json;
+  their times are strings like "n3", "n3+1.2", "n9@roadmap", "n6.end+1" (see SKILL.md).
+-->
+<style>
+@font-face{font-family:"Overused Grotesk";src:url(fonts/OverusedGrotesk-Roman.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Overused Grotesk";src:url(fonts/OverusedGrotesk-Medium.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"Overused Grotesk";src:url(fonts/OverusedGrotesk-SemiBold.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Overused Grotesk";src:url(fonts/OverusedGrotesk-Bold.woff2) format("woff2");font-weight:700}
+@font-face{font-family:"IBM Plex Mono";src:url(fonts/IBMPlexMono-Regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"IBM Plex Mono";src:url(fonts/IBMPlexMono-Medium.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"Departure Mono";src:url(fonts/DepartureMono-Regular.woff2) format("woff2")}
+:root{--ground:#E9E9E9;--ink:#3B3854;--accent:#3FE9A0;--accent2:#D7F23C;--mat:#1c1a2b;--matline:150,160,255;
+  --sans:"Overused Grotesk",system-ui,sans-serif;--mono:"IBM Plex Mono",monospace;--pixel:"Departure Mono",monospace}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;overflow:hidden}
+#stage{position:relative;overflow:hidden;background:#000;font-family:var(--sans);color:#fff}
+.layer{position:absolute;inset:0;overflow:hidden}
+.abs{position:absolute}
+img{display:block}
+
+/* the cutting mat */
+.mat{position:absolute;inset:-80px;transform-origin:50% 50%;background:
+  radial-gradient(ellipse at 50% 45%,rgba(var(--matline),.10),transparent 60%),
+  repeating-linear-gradient(0deg,rgba(var(--matline),.16) 0 1px,transparent 1px 120px),
+  repeating-linear-gradient(90deg,rgba(var(--matline),.16) 0 1px,transparent 1px 120px),
+  repeating-linear-gradient(0deg,rgba(var(--matline),.07) 0 1px,transparent 1px 24px),
+  repeating-linear-gradient(90deg,rgba(var(--matline),.07) 0 1px,transparent 1px 24px),var(--mat)}
+.mat .diag{position:absolute;left:50%;top:50%;width:3200px;height:1px;background:rgba(var(--matline),.10);transform-origin:0 0}
+.mat .ruler{position:absolute;font:500 13px var(--mono);color:rgba(var(--matline),.45);letter-spacing:.04em;white-space:nowrap}
+.mat .circle{position:absolute;border:1px solid rgba(var(--matline),.12);border-radius:50%}
+.vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 45%,rgba(0,0,0,.55) 100%)}
+.grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.16;background-size:512px 512px;z-index:8}
+.photo{position:absolute;box-shadow:0 30px 70px rgba(0,0,0,.55),0 4px 12px rgba(0,0,0,.4);transform-origin:50% 50%;background:#111}
+.photo img{width:100%;height:100%;object-fit:cover}
+.photo.bw img{filter:grayscale(1) contrast(1.05)}
+.paper{position:absolute;box-shadow:0 24px 50px rgba(0,0,0,.5);background:#fff;transform-origin:50% 50%}
+.paper img{width:100%;height:100%;object-fit:cover}
+
+/* captions, typed on */
+.cap{position:absolute;z-index:6;font-family:var(--pixel);font-size:40px;line-height:1.15;color:#fff;white-space:pre;text-shadow:0 2px 14px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.9)}
+.cap.big{font-size:72px}.cap.huge{font-size:120px}
+.cap .cur{display:inline-block;width:.55em;height:.95em;background:var(--accent);vertical-align:-.1em;margin-left:.06em}
+.cap .hl{color:var(--accent)}.cap .hl2{color:var(--accent2)}
+
+/* film */
+.film{position:absolute;inset:0;background:#000}
+.film img.cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:contrast(1.08) saturate(.9) brightness(.95)}
+.film img.blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(38px) brightness(.35) saturate(.8)}
+.film img.tall{position:absolute;top:0;left:50%;height:100%;width:auto;filter:contrast(1.08) saturate(.9)}
+.film .shade{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,transparent 35%,rgba(0,0,0,.7) 100%)}
+
+/* the phone */
+.phonewrap{position:absolute;left:50%;top:50%;width:0;height:0;perspective:2200px}
+.phone{position:absolute;left:-205px;top:-430px;width:410px;height:860px;border-radius:62px;background:#0d0d12;padding:14px;box-shadow:0 0 0 2px #2a2a33,0 60px 140px rgba(0,0,0,.8),0 0 160px rgba(var(--matline),.18)}
+.phone .scr{position:relative;width:100%;height:100%;border-radius:50px;overflow:hidden;background:#000;font-family:-apple-system,"Segoe UI",var(--sans)}
+.phone .island{position:absolute;left:50%;top:12px;width:120px;height:34px;margin-left:-60px;border-radius:20px;background:#000;z-index:5}
+.phone .status{position:absolute;left:0;right:0;top:0;height:54px;display:flex;justify-content:space-between;align-items:center;padding:0 34px;font:600 16px var(--sans);color:#fff;z-index:4;background:#000}
+.phone .tabs{position:absolute;left:0;right:0;top:54px;height:50px;display:flex;justify-content:space-around;align-items:center;border-bottom:1px solid #2f3336;background:rgba(0,0,0,.92);z-index:3;font:600 15px var(--sans);color:#71767b}
+.phone .tabs b{color:#fff;border-bottom:3px solid #1d9bf0;padding-bottom:10px;margin-top:13px}
+.phone .feed{position:absolute;left:0;right:0;top:104px}
+.post{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid #2f3336;color:#e7e9ea;font-size:15px;line-height:1.35}
+.post .av{flex:0 0 40px;height:40px;border-radius:50%}
+.post .body{flex:1;min-width:0}
+.post .who b{color:#e7e9ea}.post .who span{color:#71767b}
+.post .txt{margin:3px 0 8px;white-space:pre-wrap}
+.post .media{border-radius:16px;border:1px solid #2f3336;overflow:hidden;position:relative}
+.post .acts{display:flex;justify-content:space-between;color:#71767b;font-size:13px;margin-top:10px;padding-right:6px}
+.post .acts i{font-style:normal}
+.bm{display:inline-block;transform-origin:50% 50%}.bm.on{color:var(--accent)}
+.toast{position:absolute;left:12px;right:12px;top:58px;border-radius:22px;background:rgba(40,40,48,.92);padding:12px 14px;display:flex;gap:12px;align-items:center;z-index:6;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.toast .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:20px;background:#7C8CF8}
+.toast .t1{font:600 14px var(--sans)}.toast .t2{font:400 13px var(--sans);color:#c9c9d0}
+
+/* the video call */
+.call{position:absolute;inset:0;background:#141419}
+.call .top{position:absolute;left:0;right:0;top:0;height:70px;display:flex;align-items:center;gap:16px;padding:0 36px;color:#d9d9e0;font:500 20px var(--sans);border-bottom:1px solid #26262e}
+.call .rec{width:12px;height:12px;border-radius:50%;background:#ff4d4d}
+.call .timer{margin-left:auto;font:500 20px var(--mono);color:#a9a9b3}
+.call .board{position:absolute;left:36px;top:100px;width:1250px;height:940px;border-radius:18px;background:#f6f6f8;background-image:radial-gradient(#cfcfd8 1.2px,transparent 1.2px);background-size:26px 26px;overflow:hidden}
+.call .board .lbl{position:absolute;left:24px;top:18px;font:500 16px var(--mono);color:#8b8a9c;letter-spacing:.04em}
+.call .board .tool{position:absolute;left:24px;bottom:22px;display:flex;gap:10px}
+.call .board .tool span{width:44px;height:44px;border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.call .board .caret{position:absolute;left:120px;top:420px;width:3px;height:44px;background:var(--ink)}
+.call .board .ph{position:absolute;left:136px;top:422px;font:400 32px var(--sans);color:#b6b5c4}
+.call .board .q{position:absolute;left:120px;top:250px;font:700 84px/1.05 var(--sans);color:var(--ink);letter-spacing:-.02em}
+.call .tile{position:absolute;left:1316px;width:568px;border-radius:18px;overflow:hidden;background:#22222b}
+.call .tile .name{position:absolute;left:18px;bottom:16px;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,.55);font:500 17px var(--sans);color:#fff}
+.call .tile .pk{position:absolute;left:50%;top:44%;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;background:linear-gradient(135deg,#7C8CF8,#4C5FD7);display:grid;place-items:center;font:600 56px var(--sans);color:#fff}
+.call .tile .ring{position:absolute;left:50%;top:44%;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;border:4px solid var(--accent)}
+.call .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.call .msg{position:absolute;left:1316px;width:568px;padding:18px 20px;border-radius:16px;background:#26262f;color:#fff;font:500 24px var(--sans);line-height:1.3}
+.call .msg small{display:block;font:500 15px var(--mono);color:#8e8ea0;margin-bottom:6px}
+
+/* the mark */
+.lockup{position:absolute;left:50%;top:50%;display:flex;align-items:center;gap:36px;color:var(--ink)}
+.lockup .mark svg{width:100%;height:100%;overflow:visible}
+.lockup .word{font-family:var(--pixel);white-space:pre}
+.tagline{position:absolute;left:0;right:0;text-align:center;font:600 44px var(--sans);color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+(() => {
+const stage = document.getElementById("stage");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const E = {
+  lin: (t) => t, out3: (t) => 1 - (1 - t) ** 3, out5: (t) => 1 - (1 - t) ** 5, in3: (t) => t * t * t,
+  io3: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
+  back: (t) => { const c = 1.9; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2; },
+};
+const P = (t, a, d, e = E.out3) => e(clamp((t - a) / d));
+const el = (tag, cls, parent, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; };
+const css = (e, o) => { for (const k in o) e.style[k] = o[k]; };
+const pad = (n) => String(n).padStart(4, "0");
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const pending = [];
+const setSrc = (img, src) => { if (img.getAttribute("src") !== src) { img.src = src; pending.push(img.decode().catch(() => null)); } };
+const SFX = [];
+const sfx = (at, kind, gain = 1) => { if (isFinite(at)) SFX.push([+at.toFixed(3), kind, gain]); };
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+let W = 1920, H = 1080, CLIP_FPS = 30, S, TL, NOISE = [];
+const IMGS = {};
+
+// ------------------------------------------------------------------ time specs: "n3", "n3+1.2", "n9@roadmap-0.1", "n6.end+1", 12.5
+function T(spec) {
+  if (typeof spec === "number") return spec;
+  const m = /^\s*([A-Za-z]\w*)(?:@([^+\-\s]+)|\.(end))?\s*([+-]\s*[\d.]+)?\s*$/.exec(String(spec));
+  if (!m) { const n = Number(spec); if (!isNaN(n)) return n; throw new Error(`bad time "${spec}"`); }
+  const [, key, word, end, off] = m;
+  let at;
+  if (key === "END") at = TL.end;
+  else {
+    const c = TL.cues[key]; if (!c) throw new Error(`no line "${key}" (in "${spec}")`);
+    at = c.at;
+    if (end) at = c.at + c.dur;
+    if (word) {
+      const w = (c.words || []).find((x) => x[0].toLowerCase().replace(/[^\w]/g, "").startsWith(word.toLowerCase().replace(/[^\w]/g, "")));
+      if (!w) throw new Error(`no word "${word}" in line ${key}`);
+      at = c.at + w[1];
+    }
+  }
+  return at + (off ? Number(off.replace(/\s/g, "")) : 0);
+}
+
+// ------------------------------------------------------------------ scenes
+const scenes = [];
+const scene = (t0, t1, root, update, z = 0) => { root.style.zIndex = z; root.style.display = "none"; scenes.push({ t0, t1, root, update }); };
+
+/** A typed caption. [text] is the accent colour, {text} the second accent. */
+function caption(parent, text, { x, y, at, to = 1e9, cps = 30, size = "", align = "left", tick = 0.55 }) {
+  const c = el("div", `cap ${size}`, parent);
+  c.style.left = x + "px"; c.style.top = y + "px";
+  const shift = align === "center" ? "translateX(-50%)" : align === "right" ? "translateX(-100%)" : "";
+  c.style.transform = shift;
+  const plain = text.replace(/[\[\]{}]/g, "");
+  if (tick) sfx(at, "type", tick);
+  return (t) => {
+    if (t < at || t > to) { c.style.opacity = 0; return; }
+    c.style.opacity = 1;
+    const k = Math.min(plain.length, Math.floor((t - at) * cps));
+    let out = "", seen = 0, open = "";
+    for (const ch of text) {
+      if (ch === "[") { out += '<span class="hl">'; open = "</span>"; continue; }
+      if (ch === "{") { out += '<span class="hl2">'; open = "</span>"; continue; }
+      if (ch === "]" || ch === "}") { out += "</span>"; open = ""; continue; }
+      if (seen >= k) break;
+      out += esc(ch); seen++;
+    }
+    out += open;
+    const typing = k < plain.length || ((t - at) * 2) % 1 < 0.5 && t - at < plain.length / cps + 0.6;
+    c.innerHTML = out + (typing ? '<span class="cur"></span>' : "");
+  };
+}
+const capsFrom = (parent, list, anchor = () => null) => (list || []).map((c) => {
+  const a = c.of != null ? anchor(c.of) : null;
+  let x = c.x, y = c.y, align = c.align || "left";
+  if (a) {  // placed against a shot's box: above, below, right, br (bottom right)
+    const p = c.pos || "below";
+    if (p === "above") { x = a.x - 20; y = a.y - 64; }
+    if (p === "below") { x = 960; y = a.y + a.h + 30; align = "center"; }
+    if (p === "right") { x = a.x + a.w + 50; y = c.y ?? a.y + a.h * 0.4; }
+    if (p === "br") { x = a.x + a.w - 120; y = a.y + a.h - 80; }
+    x += c.dx || 0; y += c.dy || 0;
+  }
+  const at = T(c.at);
+  return caption(parent, c.text, { x, y, at, to: c.to != null ? T(c.to) : 1e9, size: c.size || "", align, cps: c.cps || 30, tick: c.tick ?? 0.55 });
+});
+
+function mat(parent) {
+  const m = el("div", "mat", parent);
+  for (const r of [30, 150, 60, 120]) { const d = el("div", "diag", m); d.style.transform = `rotate(${r}deg) translateX(-1600px)`; }
+  for (const [x, y, r] of [[330, 240, 190], [1650, 900, 260], [1500, 180, 90]]) { const c = el("div", "circle", m); css(c, { left: x - r + "px", top: y - r + "px", width: 2 * r + "px", height: 2 * r + "px" }); }
+  const top = el("div", "ruler", m); css(top, { left: "80px", top: "92px" });
+  top.textContent = Array.from({ length: 17 }, (_, i) => String(i + 1).padEnd(15, " ")).join("");
+  const left = el("div", "ruler", m); css(left, { left: "92px", top: "80px", writingMode: "vertical-rl" });
+  left.textContent = Array.from({ length: 10 }, (_, i) => String(i + 1).padEnd(9, " ")).join("");
+  return m;
+}
+const grain = (parent) => { const g = el("div", "grain", parent); return (t) => { g.style.backgroundImage = `url(${NOISE[Math.floor(t * 30) % NOISE.length]})`; }; };
+
+/** The mat: photos pinned one after another as the narrator speaks, papers fanning out, then the whole wall joined up. */
+function matScene(cfg) {
+  const t0 = T(cfg.from), t1 = T(cfg.to);
+  const root = el("div", "layer", stage);
+  const m = mat(root); const g = grain(root); el("div", "vignette", root);
+  const items = [], boxes = [];
+  (cfg.shots || []).forEach((s) => {
+    const a = T(s.from), b = T(s.to);
+    if (s.papers) {  // a fan of paper first pages sliding up into place
+      const spots = s.spots || [[520, 520, -7], [860, 470, 4], [1190, 540, -3], [1460, 470, 6], [700, 600, 3], [1040, 610, -5]];
+      s.papers.forEach((name, k) => {
+        const im = IMGS["paper:" + name], hh = s.h || 640, ww = hh * im.naturalWidth / im.naturalHeight;
+        const p = el("div", "paper", root); el("img", null, p).src = im.src;
+        const [cx, cy, r] = spots[k % spots.length], at = a + k * 0.2;
+        css(p, { width: ww + "px", height: hh + "px", left: cx - ww / 2 + "px", top: cy - hh / 2 + "px" });
+        sfx(at, k === 0 ? "papers" : "photo", 0.5);
+        items.push((t) => {
+          const on = t >= at && t < b; p.style.display = on ? "block" : "none"; if (!on) return;
+          const q = P(t, at, 0.45, E.out5);
+          p.style.transform = `translate(${lerp(-60 + k * 30, 0, q)}px, ${lerp(700, 0, q)}px) rotate(${lerp(r * 3, r, q)}deg) scale(${1 + 0.015 * (t - at)})`;
+        });
+      });
+      boxes.push({ x: 300, y: 200, w: 1300, h: 700 });
+      return;
+    }
+    const im = IMGS["photo:" + s.photo], ar = im.naturalWidth / im.naturalHeight;
+    const hh = s.h || 640, ww = hh * ar, cx = s.cx ?? 960, cy = s.cy ?? 540;
+    const p = el("div", `photo${s.bw ? " bw" : ""}`, root); el("img", null, p).src = im.src;
+    css(p, { width: ww + "px", height: hh + "px", left: cx - ww / 2 + "px", top: cy - hh / 2 + "px" });
+    sfx(a, "photo", 0.8);
+    items.push((t) => {
+      const on = t >= a && t < b; p.style.display = on ? "block" : "none"; if (!on) return;
+      p.style.transform = `rotate(${s.rot || 0}deg) scale(${lerp(1.07, 1, P(t, a, 0.35, E.out5)) * (1 + 0.025 * (t - a))})`;
+    });
+    boxes.push({ x: cx - ww / 2, y: cy - hh / 2, w: ww, h: hh });
+  });
+  const caps = capsFrom(root, cfg.captions, (i) => boxes[i]);
+
+  // the finale: every picture at once, joined by drawn lines, under one big line of text
+  let wall = null;
+  if (cfg.wall) {
+    const w0 = T(cfg.wall.from), wallRoot = el("div", "layer", root);
+    const names = cfg.wall.items || [...new Set((cfg.shots || []).flatMap((s) => (s.papers ? s.papers.map((x) => "paper:" + x) : ["photo:" + s.photo])))];
+    const cols = 6, cw = W / cols, rows = Math.ceil(names.length / cols), rh = H / rows, pos = [];
+    names.forEach((key, k) => {
+      const im = IMGS[key]; if (!im) return;
+      const isPaper = key.startsWith("paper:"), hh = isPaper ? 300 : 240 + rnd() * 50, ww = hh * im.naturalWidth / im.naturalHeight;
+      const cx = cw * (k % cols) + cw / 2 + (rnd() - 0.5) * 60, cy = rh * Math.floor(k / cols) + rh / 2 + (rnd() - 0.5) * 50;
+      const bw = !isPaper && (cfg.shots || []).some((s) => "photo:" + s.photo === key && s.bw);
+      const p = el("div", isPaper ? "paper" : `photo${bw ? " bw" : ""}`, wallRoot); el("img", null, p).src = im.src;
+      css(p, { width: ww + "px", height: hh + "px", left: cx - ww / 2 + "px", top: cy - hh / 2 + "px", transform: `rotate(${(rnd() - 0.5) * 8}deg)` });
+      pos.push([cx, cy]);
+    });
+    const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("width", W); svg.setAttribute("height", H); css(svg, { position: "absolute", left: 0, top: 0 });
+    wallRoot.appendChild(svg);
+    const links = [];
+    for (let k = 0; k < pos.length; k++) for (const j of [k + 1, k + cols, k + cols + 1]) {
+      if (j >= pos.length || ((j === k + 1 || j === k + cols + 1) && (k + 1) % cols === 0) || rnd() < 0.35) continue;
+      const l = document.createElementNS(NS, "line"), len = Math.hypot(pos[j][0] - pos[k][0], pos[j][1] - pos[k][1]);
+      l.setAttribute("x1", pos[k][0]); l.setAttribute("y1", pos[k][1]); l.setAttribute("x2", pos[j][0]); l.setAttribute("y2", pos[j][1]);
+      l.setAttribute("stroke", S.brand.colors.accent); l.setAttribute("stroke-width", "3"); l.setAttribute("stroke-dasharray", len); l.setAttribute("stroke-linecap", "round");
+      svg.appendChild(l); links.push([l, len, links.length]);
+    }
+    const dots = pos.map(([x, y]) => { const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 9); c.setAttribute("fill", S.brand.colors.accent); svg.appendChild(c); return c; });
+    const band = el("div", "abs", wallRoot); css(band, { left: 0, right: 0, top: "430px", height: "220px", background: "linear-gradient(transparent,rgba(12,11,22,.86) 25%,rgba(12,11,22,.86) 75%,transparent)" });
+    const big = caption(wallRoot, cfg.wall.caption, { x: 960, y: 488, at: T(cfg.wall.caption_at), size: "huge", align: "center", cps: 24 });
+    sfx(w0, "whoosh", 0.7);
+    wall = { root: wallRoot, draw: (t) => {
+      const on = t >= w0; wallRoot.style.display = on ? "block" : "none"; if (!on) return false;
+      const q = P(t, w0, 1.6, E.out5);
+      wallRoot.style.transform = `scale(${lerp(1.55, 1, q)}) rotate(${lerp(-2.5, 0, q)}deg)`;
+      for (const [l, len, i] of links) l.setAttribute("stroke-dashoffset", len * (1 - P(t, w0 + 0.25 + i * 0.03, 0.45)));
+      dots.forEach((d, i) => d.setAttribute("opacity", P(t, w0 + 0.2 + i * 0.04, 0.2)));
+      big(t); return true;
+    } };
+  }
+  scene(t0, t1, root, (lt, t) => {
+    m.style.transform = `scale(${1 + 0.035 * ((t - t0) / (t1 - t0))})`;
+    g(t); items.forEach((f) => f(t)); caps.forEach((f) => f(t));
+    if (wall && wall.draw(t)) for (const c of root.children) if (c !== wall.root && c !== m && !c.classList.contains("grain") && !c.classList.contains("vignette")) c.style.display = "none";
+    root.style.opacity = 1 - P(t, t1 - 0.35, 0.35);
+  }, 1);
+}
+
+/** Stock footage, cut to frames by fetch_media.py; portrait clips sit on a blurred copy of themselves. */
+function film(parent, clip) {
+  const n = S.media.frames[clip];
+  const f = el("div", "film", parent);
+  const tall = S.media.tall[clip];
+  const blur = tall ? el("img", "blur", f) : null, img = el("img", tall ? "tall" : "cover", f);
+  el("div", "shade", f);
+  return { root: f, n, draw: (lt, zoom = 1, freezeAt = null) => {
+    const k = Math.min(n, 1 + Math.floor(Math.min(lt, freezeAt ?? 1e9) * CLIP_FPS));
+    const src = `media/video/${clip}/${pad(k)}.jpg`;
+    setSrc(img, src); if (blur) setSrc(blur, src);
+    img.style.transform = `${tall ? "translateX(-50%) " : ""}scale(${zoom})`;
+  } };
+}
+
+function clipScene(cfg) {
+  const a = T(cfg.from), b = T(cfg.to);
+  const root = el("div", "layer", stage); root.style.background = "#000";
+  const g = grain(root), f = film(root, cfg.clip), z = cfg.zoom || [1, 1.06];
+  const caps = capsFrom(root, cfg.captions);
+  scene(a, b, root, (lt, t) => { g(t); f.draw(lt, lerp(z[0], z[1], lt / (b - a))); caps.forEach((c) => c(t)); }, 2);
+}
+
+/** A phone in the dark: a feed of posts, flicked through; a bookmark, a 2x badge, a launch toast. */
+function phoneScene(cfg) {
+  const a = T(cfg.from), b = T(cfg.to);
+  const root = el("div", "layer", stage); root.style.background = "radial-gradient(ellipse at 50% 50%,#1a1830 0%,#050508 70%)";
+  const g = grain(root);
+  const wrap = el("div", "phonewrap", root), phone = el("div", "phone", wrap), scr = el("div", "scr", phone);
+  el("div", "island", scr); el("div", "status", scr, "<span>2:47</span><span>▮▮▮ ◔ ▭</span>");
+  el("div", "tabs", scr, `<b>${esc(cfg.tabs?.[0] || "For you")}</b><span>${esc(cfg.tabs?.[1] || "Following")}</span><span>${esc(cfg.tabs?.[2] || "AI")}</span>`);
+  const feed = el("div", "feed", scr);
+  const art = {
+    tags: (p) => `<div class="media" style="height:190px;background:#101418;padding:14px">${(p.tags || []).map((x, i) => `<span style="display:inline-block;margin:5px;padding:6px 10px;border-radius:8px;font:600 12px var(--sans);color:#0b0b0f;background:${["#3FE9A0", "#D7F23C", "#7C8CF8", "#FF8A65", "#F7C948", "#4DD0E1"][i % 6]}">${esc(x)}</span>`).join("")}</div>`,
+    video: (p) => `<div class="media" style="height:200px;background:linear-gradient(135deg,#2b2b40,#111)"><div style="position:absolute;left:50%;top:44%;width:64px;height:64px;margin:-32px;border-radius:50%;background:rgba(255,255,255,.9);display:grid;place-items:center;color:#111;font-size:26px">▶</div><div style="position:absolute;left:12px;right:12px;bottom:12px;height:4px;border-radius:2px;background:#444"><div class="vbar" style="height:100%;width:8%;background:#f33;border-radius:2px"></div></div><div class="speed" style="position:absolute;right:12px;top:12px;padding:4px 10px;border-radius:8px;background:#fff;color:#111;font:700 15px var(--sans)">2x</div><div style="position:absolute;left:12px;top:12px;font:700 20px var(--sans);color:#fff;white-space:pre">${esc(p.title || "")}</div></div>`,
+    launch: (p) => `<div class="media" style="height:180px;background:radial-gradient(circle at 30% 30%,#7C8CF8,#2b1b5a 60%,#0b0b18);display:grid;place-items:center;font:800 40px var(--sans);color:#fff;letter-spacing:-.02em">${esc(p.title || "")}</div>`,
+  };
+  let bm = null, speed = null, vbar = null;
+  (cfg.posts || []).forEach((p) => {
+    const e = el("div", "post", feed, `<div class="av" style="background:${p.color || "#7C8CF8"}"></div><div class="body"><div class="who"><b>${esc(p.name)}</b> <span>${esc(p.handle)} · 2h</span></div><div class="txt">${esc(p.text)}</div>${p.media ? art[p.media](p) : ""}<div class="acts"><i>💬 214</i><i>🔁 1.2K</i><i>♡ ${esc(p.likes || "12K")}</i><i>📊 ${esc(p.views || "900K")}</i><i class="bm">🔖</i></div></div>`);
+    if (!bm && p.save) bm = e.querySelector(".bm");
+    if (!speed && p.media === "video") { speed = e.querySelector(".speed"); vbar = e.querySelector(".vbar"); }
+  });
+  const toast = el("div", "toast", scr, `<div class="ic">✦</div><div><div class="t1">${esc(cfg.toast?.[0] || "New launch · just now")}</div><div class="t2">${esc(cfg.toast?.[1] || "")}</div></div>`);
+  const tSave = T(cfg.save_at), t2x = T(cfg.speed_at), tLaunch = T(cfg.launch_at), flicks = (cfg.flicks || []).map(([at, px]) => [T(at), px]);
+  sfx(tSave, "pop", 0.8); sfx(tLaunch - 0.1, "buzz", 0.9); flicks.forEach(([at]) => sfx(at, "scroll", 0.5));
+  const caps = capsFrom(root, cfg.captions);
+  scene(a, b, root, (lt, t) => {
+    g(t);
+    const u = lt / (b - a);
+    phone.style.transform = `translateY(${lerp(-20, -70, P(t, a, 0.5))}px) rotateX(${lerp(24, 16, u)}deg) rotateY(${lerp(-20, -10, u)}deg) rotateZ(${lerp(9, 5, u)}deg) scale(${lerp(0.98, 1.08, E.out3(clamp(u)))})`;
+    feed.style.transform = `translateY(${-flicks.reduce((y, [at, px]) => y + P(t, at, 0.35, E.out5) * px, 0)}px)`;
+    if (bm) { const on = t >= tSave; bm.classList.toggle("on", on); bm.style.transform = `scale(${on ? lerp(1.9, 1, P(t, tSave, 0.3, E.back)) : 1})`; }
+    if (speed) { speed.style.transform = `scale(${t >= t2x ? lerp(1.8, 1, P(t, t2x, 0.3, E.back)) : 1})`; speed.style.background = t >= t2x ? S.brand.colors.accent : "#fff"; vbar.style.width = 8 + 60 * clamp((t - t2x) / 1.2) + "%"; }
+    toast.style.transform = `translateY(${lerp(-140, 0, P(t, tLaunch, 0.35, E.back))}px)`;
+    caps.forEach((c) => c(t));
+  }, 2);
+}
+
+/** The interview: a video call, the question typed in, and on the cue his camera freezes and the frame drains. */
+function callScene(cfg) {
+  const a = T(cfg.from), b = T(cfg.to), askAt = T(cfg.ask_at), freezeAt = T(cfg.freeze_at);
+  const root = el("div", "layer", stage); root.style.background = "#000";
+  const call = el("div", "call", root);
+  el("div", "top", call, `<span class="rec"></span><span>${esc(cfg.title)}</span><span class="timer">00:00</span>`);
+  const timer = call.querySelector(".timer"), rec = call.querySelector(".rec");
+  const board = el("div", "board", call, `<div class="lbl">SHARED WHITEBOARD</div><div class="q"></div><div class="caret"></div><div class="ph">Start drawing…</div><div class="tool"><span></span><span></span><span></span><span></span></div>`);
+  const q = board.querySelector(".q"), caret = board.querySelector(".caret");
+  const t1 = el("div", "tile", call); css(t1, { top: "100px", height: "380px" });
+  el("div", "pk", t1, esc(cfg.interviewer.initials)); const ring = el("div", "ring", t1); el("div", "name", t1, esc(cfg.interviewer.name));
+  const t2 = el("div", "tile", call); css(t2, { top: "630px", height: "410px" });
+  const you = el("img", null, t2); el("div", "name", t2, esc(cfg.you.name));
+  const msg = el("div", "msg", call); msg.style.top = "500px"; msg.style.display = "none";
+  const hl = cfg.highlight || "", mark = (s) => (hl ? esc(s).replace(esc(hl), `<b style="color:${S.brand.colors.accent2}">${esc(hl)}</b>`) : esc(s));
+  const fz = el("div", "cap huge", root); css(fz, { left: "960px", top: "760px" });
+  const nFrames = S.media.frames[cfg.you.clip];
+  sfx(askAt, "type", 0.5); (cfg.heartbeats || []).forEach((h) => sfx(T(h), "heart", 0.9));
+  sfx(freezeAt, "freeze", 1.0); sfx(freezeAt + 0.02, "glitch", 0.9);
+  scene(a, b, root, (lt, t) => {
+    const frozen = t >= freezeAt;
+    timer.textContent = `00:${String(41 + Math.floor(Math.min(t, freezeAt) - a)).padStart(2, "0")}`;
+    rec.style.opacity = (t * 2) % 1 < 0.6 ? 1 : 0.3;
+    caret.style.opacity = frozen || (t * 1.6) % 1 < 0.5 ? 1 : 0;
+    ring.style.opacity = t > askAt - 0.2 && t < askAt + 1.6 ? 0.5 + 0.5 * Math.abs(Math.sin(t * 9)) : 0;
+    const k = Math.floor((t - askAt) * 24);
+    if (t >= askAt) { msg.style.display = "block"; msg.innerHTML = `<small>${esc(cfg.interviewer.name.split("·")[0].trim().toUpperCase())}</small>${mark(cfg.question.slice(0, Math.max(0, k)))}`; }
+    const kq = Math.floor((t - askAt - 0.2) * 20);
+    q.innerHTML = t >= askAt + 0.2 ? mark(cfg.board.slice(0, Math.max(0, kq))).replace(`color:${S.brand.colors.accent2}`, "background:linear-gradient(transparent 60%," + S.brand.colors.accent2 + " 60%)") : "";
+    setSrc(you, `media/video/${cfg.you.clip}/${pad(Math.min(nFrames, 1 + Math.floor((Math.min(t, freezeAt) - a) * CLIP_FPS)))}.jpg`);
+    // on the freeze: push into his tile, drain the colour, tear the picture; everything else goes dark
+    const zq = P(t, freezeAt, 0.5, E.out5), cx = 1316 + 284, cy = 630 + 205;
+    call.style.transformOrigin = `${cx}px ${cy}px`;
+    call.style.transform = `translate(${lerp(0, 960 - cx, zq)}px,${lerp(0, 540 - cy, zq)}px) scale(${lerp(1, 2.5, zq)})`;
+    const dim = 1 - P(t, freezeAt, 0.3); for (const e of [board, t1, msg, call.querySelector(".top")]) e.style.opacity = dim;
+    call.style.background = frozen ? "#000" : "";
+    const glitch = frozen && ((t - freezeAt) < 0.25 || ((t - freezeAt) * 7) % 1 < 0.12);
+    call.style.filter = frozen ? `grayscale(${P(t, freezeAt, 0.4)}) contrast(1.15)${glitch ? " hue-rotate(80deg) saturate(3)" : ""}` : "none";
+    you.style.transform = glitch ? `translateX(${(rnd() - 0.5) * 40}px)` : "none";
+    if (frozen && cfg.freeze_caption) {
+      fz.style.display = "block"; fz.innerHTML = cfg.freeze_caption.replace(/\[/g, '<span class="hl">').replace(/\]/g, "</span>");
+      fz.style.opacity = P(t, freezeAt + 0.1, 0.15); fz.style.transform = `translateX(-50%) translateX(${glitch ? (rnd() - 0.5) * 30 : 0}px)`;
+    } else fz.style.display = "none";
+    root.style.opacity = 1 - P(t, b - 0.55, 0.55, E.io3);
+  }, 2);
+}
+
+/** The mark draws itself: parts with class "grow" rise from their base in turn, paths with class "draw" ink on, the wordmark types. */
+function logoScene(cfg) {
+  const a = T(cfg.from), hit = T(cfg.hit), b = T(cfg.to);
+  const root = el("div", "layer", stage); root.style.background = "var(--ground)";
+  const size = cfg.size || 230;
+  const l = el("div", "lockup", root);
+  const mk = el("div", "mark", l, S.brand.mark_svg); css(mk, { width: size + "px", height: size + "px" });
+  const word = el("div", "word", l); css(word, { fontSize: size * 0.62 + "px", width: S.brand.wordmark.length + "ch" });
+  const grow = [...mk.querySelectorAll(".grow")], draw = [...mk.querySelectorAll(".draw")];
+  draw.forEach((d) => { d.setAttribute("pathLength", "1"); d.setAttribute("stroke-dasharray", "1"); });
+  const tag = cfg.tagline ? el("div", "tagline", root, esc(cfg.tagline)) : null; if (tag) tag.style.top = 540 + size * 0.75 + "px";
+  sfx(hit - 2.2, "riser", 0.5); sfx(hit, "impact", 0.8); sfx(hit + 0.02, "sting", 0.9);
+  scene(a - 0.6, b, root, (lt, t) => {
+    grow.forEach((g, i) => { g.style.transformBox = "fill-box"; g.style.transformOrigin = "50% 100%"; g.style.transform = `scaleY(${P(t, a + 0.1 + i * 0.12, 0.35, E.back)})`; });
+    draw.forEach((d, i) => d.setAttribute("stroke-dashoffset", 1 - P(t, a + 0.1 + grow.length * 0.12 + 0.05 + i * 0.3, 0.4, E.io3)));
+    word.textContent = S.brand.wordmark.slice(0, Math.floor(clamp((t - a - 0.55) * 22, 0, S.brand.wordmark.length)));
+    const pop = lerp(1, 1.05, P(t, a, hit - a, E.io3)) * lerp(1, 1.08, P(t, hit, 0.25, E.out5)) / lerp(1, 1.08, P(t, hit + 0.25, 0.6, E.io3));
+    mk.parentElement.style.transformOrigin = size / 2 + "px 50%";
+    l.style.transform = `translate(-50%,-50%) scale(${pop})`;
+    if (tag) { tag.style.opacity = P(t, hit + 0.3, 0.4); tag.style.transform = `translateY(${lerp(20, 0, P(t, hit + 0.3, 0.5, E.out5))}px)`; }
+    root.style.opacity = P(t, a - 0.6, 0.85, E.io3) * (1 - P(t, b - 0.6, 0.6, E.io3));
+  }, 3);
+}
+
+// ------------------------------------------------------------------ assembly
+async function init() {
+  S = await (await fetch("story.json", { cache: "no-store" })).json();
+  TL = await (await fetch("timeline.json", { cache: "no-store" })).json();
+  // what fetch_media.py found: photo file names, frame counts, which clips are portrait
+  S.media = { ...(S.media || {}), ...(await (await fetch("media/manifest.json", { cache: "no-store" })).json()) };
+  [W, H] = S.size || [1920, 1080];
+  css(stage, { width: W + "px", height: H + "px" });
+  const col = S.brand.colors, root = document.documentElement.style;
+  for (const [k, v] of Object.entries({ ground: col.ground, ink: col.ink, accent: col.accent, accent2: col.accent2, mat: col.mat, matline: col.matline })) if (v) root.setProperty("--" + k, v);
+  const load = (key, src) => new Promise((ok) => { const i = new Image(); i.onload = i.onerror = () => { IMGS[key] = i; ok(); }; i.src = src; });
+  await Promise.all([
+    ...Object.entries(S.media.photo_files || {}).map(([k, f]) => load("photo:" + k, `media/photos/${f}`)),
+    ...Object.keys(S.media.papers || {}).map((k) => load("paper:" + k, `media/papers/${k}.png`)),
+    document.fonts.load('40px "Departure Mono"'), document.fonts.load('700 40px "Overused Grotesk"'), document.fonts.load('500 20px "IBM Plex Mono"'),
+  ]);
+  for (let k = 0; k < 6; k++) {
+    const c = document.createElement("canvas"); c.width = c.height = 512;
+    const x = c.getContext("2d"), d = x.createImageData(512, 512);
+    for (let i = 0; i < d.data.length; i += 4) { const v = 128 + (rnd() - 0.5) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+    x.putImageData(d, 0, 0); NOISE.push(c.toDataURL("image/png"));
+  }
+  const kinds = { mat: matScene, clip: clipScene, phone: phoneScene, call: callScene, logo: logoScene };
+  for (const s of S.scenes) { if (!kinds[s.type]) throw new Error(`unknown scene type ${s.type}`); kinds[s.type](s); }
+  window.END = TL.end;
+}
+
+window.SFX = SFX;
+window.ready = init();
+window.seek = async (t) => {
+  pending.length = 0;
+  for (const s of scenes) {
+    const on = t >= s.t0 && t < s.t1;
+    s.root.style.display = on ? "block" : "none";
+    if (on) s.update(t - s.t0, t);
+  }
+  await Promise.all(pending);
+};
+})();
+</script>
+</body>
+</html>
